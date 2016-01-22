@@ -1,0 +1,5 @@
+/build
+/Deployment/*.frag
+/Deployment/*.vert
+/Deployment/run
+Thumbs.db
