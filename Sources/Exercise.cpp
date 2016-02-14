@@ -199,10 +199,58 @@ namespace {
 			/* Practical Task: Read the packets with the movement data you sent  and 
 			/* apply them by setting the boolean values for movement control. 
 			/************************************************************************/
-			#ifdef MASTER
-				// Set the values for left2, right2, up2, down2 here
-			#else
+#ifdef MASTER
+			// Set the values for left2, right2, up2, down2 here
+			if (ss.str() == "left") {
+				left2 = true;
+			}
+			if (ss.str() == "lStop") {
+				left2 = false;
+			}
+			if (ss.str() == "right") {
+				right2 = true;
+			}
+			if (ss.str() == "rStop") {
+				right2 = false;
+			}
+			if (ss.str() == "up") {
+				up2 = true;
+			}
+			if (ss.str() == "uStop") {
+				up2 = false;
+			}
+			if (ss.str() == "down") {
+				down2 = true;
+			}
+			if (ss.str() == "dStop") {
+				down2 = false;
+			}
+#else
 			// Set the values for left, right, up, down here
+			if (ss.str() == "left") {
+				left = true;
+			}
+			if (ss.str() == "lStop") {
+				left = false;
+			}
+			if (ss.str() == "right") {
+				right = true;
+			}
+			if (ss.str() == "rStop") {
+				right = false;
+			}
+			if (ss.str() == "up") {
+				up = true;
+			}
+			if (ss.str() == "uStop") {
+				up = false;
+			}
+			if (ss.str() == "down") {
+				down = true;
+			}
+			if (ss.str() == "dStop") {
+				down = false;
+			}
 
 			// receive position updates of the npc ball
 			if ((ss.str() == "x")) {
@@ -217,7 +265,7 @@ namespace {
 				read = socket.receive(buffer, sizeof(buffer), fromAddress, fromPort);
 				balls[2]->z = floatBuffer[0];
 			}
-			#endif // MASTER
+#endif // MASTER
 			
 			updateBall();
 		}
@@ -246,7 +294,7 @@ namespace {
 			++current;
 		}
 		
-		#ifdef MASTER
+#ifdef MASTER
 			// send position of the npc ball
 			unsigned char floatData[255];
 			float *f_buf = (float*)floatData;
@@ -264,7 +312,7 @@ namespace {
 			sendPacket(data3, sizeof(unsigned char)* 2);
 			f_buf[0] = balls[2]->z;
 			sendPacket(floatData, sizeof(float));
-		#endif
+#endif
 		
 		Graphics::end();
 		Graphics::swapBuffers();
@@ -323,33 +371,49 @@ namespace {
 	/* of the local player - keyDown
 	/************************************************************************/
 	void keyDown(KeyCode code, wchar_t character) {
-		#ifdef MASTER
+#ifdef MASTER
 		if (code == Key_Left) {
 			left = true;
+			const unsigned char data[] = "left\0";
+			sendPacket(data, sizeof(unsigned char) * 5);
 		}
 		else if (code == Key_Right) {
 			right = true;
+			const unsigned char data[] = "right\0";
+			sendPacket(data, sizeof(unsigned char)* 6);
 		}
 		else if (code == Key_Up) {
 			up = true;
+			const unsigned char data[] = "up\0";
+			sendPacket(data, sizeof(unsigned char)* 3);
 		}
 		else if (code == Key_Down) {
 			down = true;
+			const unsigned char data[] = "down\0";
+			sendPacket(data, sizeof(unsigned char)* 5);
 		}
-		#else
+#else
 		if (code == Key_A) {
 			left2 = true;
+			const unsigned char data[] = "left\0";
+			sendPacket(data, sizeof(unsigned char)* 5);
 		}
 		else if (code == Key_D) {
 			right2 = true;
+			const unsigned char data[] = "right\0";
+			sendPacket(data, sizeof(unsigned char)* 6);
 		}
 		if (code == Key_W) {
 			up2 = true;
+			const unsigned char data[] = "up\0";
+			sendPacket(data, sizeof(unsigned char)* 3);
 		}
 		else if (code == Key_S) {
 			down2 = true;
+			const unsigned char data[] = "down\0";
+			sendPacket(data, sizeof(unsigned char)* 5);
 		}
-		#endif // MASTER
+#endif // MASTER
 	}
 	
 	/************************************************************************/
@@ -357,33 +421,49 @@ namespace {
 	/* of the local player - keyUp
 	/************************************************************************/
 	void keyUp(KeyCode code, wchar_t character) {
-		#ifdef MASTER
+#ifdef MASTER
 		if (code == Key_Left) {
 			left = false;
+			const unsigned char data[] = "lStop\0";
+			sendPacket(data, sizeof(unsigned char)* 6);
 		}
 		else if (code == Key_Right) {
 			right = false;
+			const unsigned char data[] = "rStop\0";
+			sendPacket(data, sizeof(unsigned char)* 6);
 		}
 		else if (code == Key_Up) {
 			up = false;
+			const unsigned char data[] = "uStop\0";
+			sendPacket(data, sizeof(unsigned char)* 6);
 		}
 		else if (code == Key_Down) {
 			down = false;
+			const unsigned char data[] = "dStop\0";
+			sendPacket(data, sizeof(unsigned char)* 6);
 		}
-		#else
+#else
 		if (code == Key_A) {
 			left2 = false;
+			const unsigned char data[] = "lStop\0";
+			sendPacket(data, sizeof(unsigned char)* 6);
 		}
 		else if (code == Key_D) {
 			right2 = false;
+			const unsigned char data[] = "rStop\0";
+			sendPacket(data, sizeof(unsigned char)* 6);
 		}
 		else if (code == Key_W) {
 			up2 = false;
+			const unsigned char data[] = "uStop\0";
+			sendPacket(data, sizeof(unsigned char)* 6);
 		}
 		else if (code == Key_S) {
 			down2 = false;
+			const unsigned char data[] = "dStop\0";
+			sendPacket(data, sizeof(unsigned char)* 6);
 		}
-		#endif // MASTER
+#endif // MASTER
 	}
 	
 	void init() {
