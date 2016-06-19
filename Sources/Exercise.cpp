@@ -1,6 +1,5 @@
 #include <Kore/pch.h>
 
-#include <Kore/Application.h>
 #include <Kore/IO/FileReader.h>
 #include <Kore/Math/Core.h>
 #include <Kore/System.h>
@@ -530,7 +529,7 @@ namespace {
 		
 		objects[2] = balls[2] = new Ball(((float)rand() / RAND_MAX)*2-1, 4.0f, 0.0f, structure, 3.0f);
 		objects[3] = new MeshObject("base.obj", "floor.png", structure);
-		objects[3]->M = mat4::RotationX(3.1415f / 2.0f)*mat4::Scale(0.15, 1, 1);
+		objects[3]->M = mat4::RotationX(3.1415f / 2.0f)*mat4::Scale(0.15f, 1, 1);
 		objects[4] = new MeshObject("base.obj", "StarMap.png", structure);
 		objects[4]->M = mat4::RotationX(3.1415f / 2.0f)*mat4::Scale(1, 1, 1)*mat4::Translation(0, 0, 0.5f);
 		
@@ -553,21 +552,37 @@ int kore(int argc, char** argv) {
 	std::cout << "and want to connect to " << destIp[0] << "." << destIp[1] << "." << destIp[2] << "." << destIp[3] << ":" << destPort << std::endl;
 	std::cout << std::endl;
 	
-	Application* app = new Application(argc, argv, width, height,0 ,false, "Exercise 11 - "  CLIENT_NAME);
-	
+	Kore::System::setName("TUD Game Technology - ");
+	Kore::System::setup();
+	Kore::WindowOptions options;
+	options.title = "Solution 11 - " CLIENT_NAME;
+	options.width = width;
+	options.height = height;
+	options.x = 100;
+	options.y = 100;
+	options.targetDisplay = -1;
+	options.mode = WindowModeWindow;
+	options.rendererOptions.depthBufferBits = 16;
+	options.rendererOptions.stencilBufferBits = 8;
+	options.rendererOptions.textureFormat = 0;
+	options.rendererOptions.antialiasing = 0;
+	Kore::System::initWindow(options);
+
 	init();
-	
-	app->setCallback(update);
-	
-	startTime = System::time();
+
+	Kore::System::setCallback(update);
+
 	Kore::Mixer::init();
 	Kore::Audio::init();
-	
+
+
+	startTime = System::time();
+
+
 	Keyboard::the()->KeyDown = keyDown;
 	Keyboard::the()->KeyUp = keyUp;
-	
-	app->start();
-	
-	delete app;
+
+	Kore::System::start();
+
 	return 0;
 }
