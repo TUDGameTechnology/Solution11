@@ -54,11 +54,11 @@ public:
 			x = -1;
 		}
 		y += dir.y();
-		if (y < 0) {
+		if (y < -4) {
 			y = 4;
 		}
 		if (y > 4) {
-			y = 0;
+			y = -4;
 		}
 		z += dir.z();
 		if (dir.getLength() != 0) {
@@ -101,7 +101,7 @@ namespace {
 	float lastTime = 0;
 	
 	Socket socket;
-	vec3 position(0, 2, -3);
+	vec3 position(0, 0, -2.25);
 	
 	const int port = SRC_PORT;
 	const int destPort = DEST_PORT;
@@ -137,8 +137,8 @@ namespace {
 			
 			/************************************************************************/
 			/* Practical Task: Read the packets with the movement data you sent  and
-			 /* apply them by setting the boolean values for movement control.
-			 /************************************************************************/
+			/* apply them by setting the boolean values for movement control.
+			/************************************************************************/
 #ifdef MASTER
 			// Set the values for left2, right2, up2, down2 here
 			if (ss.str() == "left") {
@@ -221,7 +221,7 @@ namespace {
 		
 		Graphics4::setPipeline(pipeline);
 		
-		PV = mat4::Perspective(60, (float)width / (float)height, 0.1f, 100) * mat4::lookAt(position, vec3(position.x(), position.y(), position.z() + 10.0f), vec3(0, 1, 0));
+		PV = mat4::Perspective(90, (float)width / (float)height, 0.1f, 100) * mat4::lookAt(position, vec3(0.0, 0.0, 0.0), vec3(0, 1, 0));
 		Graphics4::setMatrix(pvLocation, PV);
 		
 		MeshObject** current = &objects[0];
@@ -296,7 +296,7 @@ namespace {
 			balls[1]->dir.y() = 0;
 		}
 		// NPC ball
-		balls[2]->dir.y() = -0.02f;
+		balls[2]->dir.y() = -0.04f;
 #ifdef MASTER
 		if (balls[2]->y == 4) {
 			balls[2]->x = ((float)rand() / RAND_MAX)*2-1;
@@ -306,8 +306,8 @@ namespace {
 	
 	/************************************************************************/
 	/* Practical Task: Send packets with information about the input controls
-	 /* of the local player - keyDown
-	 /************************************************************************/
+	/* of the local player - keyDown
+	/************************************************************************/
 	void keyDown(KeyCode code) {
 #ifdef MASTER
 		if (code == KeyLeft) {
@@ -356,8 +356,8 @@ namespace {
 	
 	/************************************************************************/
 	/* Practical Task: Send packets with information about the input controls
-	 /* of the local player - keyUp
-	 /************************************************************************/
+	/* of the local player - keyUp
+	/************************************************************************/
 	void keyUp(KeyCode code) {
 #ifdef MASTER
 		if (code == KeyLeft) {
@@ -467,14 +467,14 @@ namespace {
 		pvLocation = pipeline->getConstantLocation("PV");
 		mLocation = pipeline->getConstantLocation("M");
 		
-		objects[0] = balls[0] = new Ball(0.5f, 1.0f, 0.0f, structure, 3.0f);
-		objects[1] = balls[1] = new Ball(-0.5f, 1.0f, 0.0f, structure, 3.0f);
+		objects[0] = balls[0] = new Ball(0.5f, -2.0f, 0.0f, structure, 0.25f);
+		objects[1] = balls[1] = new Ball(-0.5f, -2.0f, 0.0f, structure, 0.25f);
 		
-		objects[2] = balls[2] = new Ball(((float)rand() / RAND_MAX)*2-1, 4.0f, 0.0f, structure, 3.0f);
+		objects[2] = balls[2] = new Ball(((float)rand() / RAND_MAX)*2-1, 4.0f, 0.0f, structure, 0.25f);
 		objects[3] = new MeshObject("base.obj", "floor.png", structure);
-		objects[3]->M = mat4::RotationX(3.1415f / 2.0f)*mat4::Scale(0.15f, 1, 1);
+		objects[3]->M = mat4::RotationX(Kore::pi / 2.0f)*mat4::Scale(0.15f, 1, 1);
 		objects[4] = new MeshObject("base.obj", "StarMap.png", structure);
-		objects[4]->M = mat4::RotationX(3.1415f / 2.0f)*mat4::Scale(1, 1, 1)*mat4::Translation(0, 0, 0.5f);
+		objects[4]->M = mat4::RotationX(Kore::pi / 2.0f)*mat4::Scale(1, 1, 1)*mat4::Translation(0, 0, 0.5f);
 		
 		Graphics4::setTextureAddressing(tex, Graphics4::U, Graphics4::Repeat);
 		Graphics4::setTextureAddressing(tex, Graphics4::V, Graphics4::Repeat);
