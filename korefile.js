@@ -1,4 +1,4 @@
-let project = new Project('Exercise11', __dirname);
+let project = new Project('Solution11', __dirname);
 
 project.addFile('Sources/**');
 project.setDebugDir('Deployment');
