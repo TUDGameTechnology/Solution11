@@ -14,12 +14,7 @@
 #include "ObjLoader.h"
 #include "Memory.h"
 
-#include <sstream>
-
 #include "MeshObject.h"
-
-// uncomment to be in control of the game
-//#define MASTER
 
 #ifdef MASTER
 #define SRC_PORT 9898
@@ -38,6 +33,15 @@
 
 using namespace Kore;
 
+enum MessageType {
+	Hello,
+	NpcPos,
+	LeftStart, LeftStop,
+	RightStart, RightStop,
+	UpStart, UpStop,
+	DownStart, DownStop
+};
+
 class Ball : public MeshObject {
 public:
 	Ball(float x, float y, float z, const Graphics4::VertexStructure& structure, float scale = 1.0f) : MeshObject("ball.obj", "unshaded.png", structure, scale), x(x), y(y), z(z), dir(0, 0, 0) {
@@ -47,10 +51,10 @@ public:
 	void update(float tdif) override {
 		vec3 dir = this->dir;
 		if (dir.getLength() != 0) dir.setLength(dir.getLength() * tdif * 60.0f);
-			x += dir.x();
-			if (x > 1) {
-				x = 1;
-			}
+		x += dir.x();
+		if (x > 1) {
+			x = 1;
+		}
 		if (x < -1) {
 			x = -1;
 		}
@@ -109,9 +113,8 @@ namespace {
 	const char* destination = "localhost";
 	
 	// Send a packet to the other client
-	// If you are sending strings, make sure to null-terminate them, e.g. "hello\0"
 	// length is the length of the packet in bytes
-	void sendPacket(const unsigned char data[], int length) {
+	void sendPacket(const u8 data[], int length) {
 		socket.send(destination, destPort, data, length);
 	}
 	
@@ -123,13 +126,10 @@ namespace {
 		// receive packets
 		while (true) {
 			// Read buffer
-			unsigned char buffer[256];
-			float *floatBuffer = (float*) buffer;
+			u8 buffer[256];
 			unsigned fromAddress;
 			unsigned fromPort;
 			int read = socket.receive(buffer, sizeof(buffer), fromAddress, fromPort);
-			std::ostringstream ss;
-			ss << buffer;
 			
 			// break if there was no new packet
 			if (read <= 0) {
@@ -142,69 +142,63 @@ namespace {
 			/************************************************************************/
 #ifdef MASTER
 			// Set the values for left2, right2, up2, down2 here
-			if (ss.str() == "left") {
+			if (buffer[0] == LeftStart) {
 				left2 = true;
 			}
-			if (ss.str() == "lStop") {
+			if (buffer[0] == LeftStop) {
 				left2 = false;
 			}
-			if (ss.str() == "right") {
+			if (buffer[0] == RightStart) {
 				right2 = true;
 			}
-			if (ss.str() == "rStop") {
+			if (buffer[0] == RightStop) {
 				right2 = false;
 			}
-			if (ss.str() == "up") {
+			if (buffer[0] == UpStart) {
 				up2 = true;
 			}
-			if (ss.str() == "uStop") {
+			if (buffer[0] == UpStop) {
 				up2 = false;
 			}
-			if (ss.str() == "down") {
+			if (buffer[0] == DownStart) {
 				down2 = true;
 			}
-			if (ss.str() == "dStop") {
+			if (buffer[0] == DownStop) {
 				down2 = false;
 			}
 #else
 			// Set the values for left, right, up, down here
-			if (ss.str() == "left") {
+			if (buffer[0] == LeftStart) {
 				left = true;
 			}
-			if (ss.str() == "lStop") {
+			if (buffer[0] == LeftStop) {
 				left = false;
 			}
-			if (ss.str() == "right") {
+			if (buffer[0] == RightStart) {
 				right = true;
 			}
-			if (ss.str() == "rStop") {
+			if (buffer[0] == RightStop) {
 				right = false;
 			}
-			if (ss.str() == "up") {
+			if (buffer[0] == UpStart) {
 				up = true;
 			}
-			if (ss.str() == "uStop") {
+			if (buffer[0] == UpStop) {
 				up = false;
 			}
-			if (ss.str() == "down") {
+			if (buffer[0] == DownStart) {
 				down = true;
 			}
-			if (ss.str() == "dStop") {
+			if (buffer[0] == DownStop) {
 				down = false;
 			}
 			
 			// receive position updates of the npc ball
-			if ((ss.str() == "x")) {
-				read = socket.receive(buffer, sizeof(buffer), fromAddress, fromPort);
-				balls[2]->x = floatBuffer[0];
-			}
-			if ((ss.str() == "y")) {
-				read = socket.receive(buffer, sizeof(buffer), fromAddress, fromPort);
-				balls[2]->y = floatBuffer[0];
-			}
-			if ((ss.str() == "z")) {
-				read = socket.receive(buffer, sizeof(buffer), fromAddress, fromPort);
-				balls[2]->z = floatBuffer[0];
+			if (buffer[0] == NpcPos) {
+				float* floats = (float*)&buffer[1];
+				balls[2]->x = floats[0];
+				balls[2]->y = floats[1];
+				balls[2]->z = floats[2];
 			}
 #endif // MASTER
 			
@@ -235,22 +229,14 @@ namespace {
 		
 #ifdef MASTER
 		// send position of the npc ball
-		unsigned char floatData[255];
-		float *f_buf = (float*)floatData;
-		
-		const unsigned char data1[] = "x\0";
-		const unsigned char data2[] = "y\0";
-		const unsigned char data3[] = "z\0";
-		
-		sendPacket(data1, sizeof(unsigned char) * 2);
-		f_buf[0] = balls[2]->x;
-		sendPacket(floatData, sizeof(float));
-		sendPacket(data2, sizeof(unsigned char)* 2);
-		f_buf[0] = balls[2]->y;
-		sendPacket(floatData, sizeof(float));
-		sendPacket(data3, sizeof(unsigned char)* 2);
-		f_buf[0] = balls[2]->z;
-		sendPacket(floatData, sizeof(float));
+		u8 data[1 + sizeof(float) * 3];
+		float* fdata = (float*)&data[1];
+
+		data[0] = (u8)NpcPos;
+		fdata[0] = balls[2]->x;
+		fdata[1] = balls[2]->y;
+		fdata[2] = balls[2]->z;
+		sendPacket(data, sizeof(data));
 #endif
 		
 		Graphics4::end();
@@ -300,7 +286,7 @@ namespace {
 		balls[2]->dir.y() = -0.04f;
 #ifdef MASTER
 		if (balls[2]->y == 4) {
-			balls[2]->x = ((float)rand() / RAND_MAX)*2-1;
+			balls[2]->x = ((float)rand() / RAND_MAX) * 2 - 1;
 		}
 #endif
 	}
@@ -313,44 +299,44 @@ namespace {
 #ifdef MASTER
 		if (code == KeyLeft) {
 			left = true;
-			const unsigned char data[] = "left\0";
-			sendPacket(data, sizeof(unsigned char) * 5);
+			u8 data = LeftStart;
+			sendPacket(&data, 1);
 		}
 		else if (code == KeyRight) {
 			right = true;
-			const unsigned char data[] = "right\0";
-			sendPacket(data, sizeof(unsigned char)* 6);
+			u8 data = RightStart;
+			sendPacket(&data, 1);
 		}
 		else if (code == KeyUp) {
 			up = true;
-			const unsigned char data[] = "up\0";
-			sendPacket(data, sizeof(unsigned char)* 3);
+			u8 data = UpStart;
+			sendPacket(&data, 1);
 		}
 		else if (code == KeyDown) {
 			down = true;
-			const unsigned char data[] = "down\0";
-			sendPacket(data, sizeof(unsigned char)* 5);
+			u8 data = DownStart;
+			sendPacket(&data, 1);
 		}
 #else
-		if (code == KeyA) {
+		if (code == KeyLeft) {
 			left2 = true;
-			const unsigned char data[] = "left\0";
-			sendPacket(data, sizeof(unsigned char)* 5);
+			u8 data = LeftStart;
+			sendPacket(&data, 1);
 		}
-		else if (code == KeyD) {
+		else if (code == KeyRight) {
 			right2 = true;
-			const unsigned char data[] = "right\0";
-			sendPacket(data, sizeof(unsigned char)* 6);
+			u8 data = RightStart;
+			sendPacket(&data, 1);
 		}
-		if (code == KeyW) {
+		else if (code == KeyUp) {
 			up2 = true;
-			const unsigned char data[] = "up\0";
-			sendPacket(data, sizeof(unsigned char)* 3);
+			u8 data = UpStart;
+			sendPacket(&data, 1);
 		}
-		else if (code == KeyS) {
+		else if (code == KeyDown) {
 			down2 = true;
-			const unsigned char data[] = "down\0";
-			sendPacket(data, sizeof(unsigned char)* 5);
+			u8 data = DownStart;
+			sendPacket(&data, 1);
 		}
 #endif // MASTER
 	}
@@ -363,44 +349,44 @@ namespace {
 #ifdef MASTER
 		if (code == KeyLeft) {
 			left = false;
-			const unsigned char data[] = "lStop\0";
-			sendPacket(data, sizeof(unsigned char)* 6);
+			u8 data = LeftStop;
+			sendPacket(&data, 1);
 		}
 		else if (code == KeyRight) {
 			right = false;
-			const unsigned char data[] = "rStop\0";
-			sendPacket(data, sizeof(unsigned char)* 6);
+			u8 data = RightStop;
+			sendPacket(&data, 1);
 		}
 		else if (code == KeyUp) {
 			up = false;
-			const unsigned char data[] = "uStop\0";
-			sendPacket(data, sizeof(unsigned char)* 6);
+			u8 data = UpStop;
+			sendPacket(&data, 1);
 		}
 		else if (code == KeyDown) {
 			down = false;
-			const unsigned char data[] = "dStop\0";
-			sendPacket(data, sizeof(unsigned char)* 6);
+			u8 data = DownStop;
+			sendPacket(&data, 1);
 		}
 #else
-		if (code == KeyA) {
+		if (code == KeyLeft) {
 			left2 = false;
-			const unsigned char data[] = "lStop\0";
-			sendPacket(data, sizeof(unsigned char)* 6);
+			u8 data = LeftStop;
+			sendPacket(&data, 1);
 		}
-		else if (code == KeyD) {
+		else if (code == KeyRight) {
 			right2 = false;
-			const unsigned char data[] = "rStop\0";
-			sendPacket(data, sizeof(unsigned char)* 6);
+			u8 data = RightStop;
+			sendPacket(&data, 1);
 		}
-		else if (code == KeyW) {
+		else if (code == KeyUp) {
 			up2 = false;
-			const unsigned char data[] = "uStop\0";
-			sendPacket(data, sizeof(unsigned char)* 6);
+			u8 data = UpStop;
+			sendPacket(&data, 1);
 		}
-		else if (code == KeyS) {
+		else if (code == KeyDown) {
 			down2 = false;
-			const unsigned char data[] = "dStop\0";
-			sendPacket(data, sizeof(unsigned char)* 6);
+			u8 data = DownStop;
+			sendPacket(&data, 1);
 		}
 #endif // MASTER
 	}
@@ -411,8 +397,8 @@ namespace {
 		socket.open(port);
 		
 		// send "hello" when joining to tell other player you are there
-		const unsigned char data[] = "hello\0";
-		sendPacket(data, sizeof(unsigned char)* 6);
+		u8 hello = Hello;
+		sendPacket(&hello, 1);
 		
 #ifdef MASTER
 		log(Info, "Waiting for another player (the SLAVE) to join my game...");
@@ -423,14 +409,12 @@ namespace {
 		// wait for other player
 		while (true) {
 			// read buffer
-			unsigned char buffer[256];
+			u8 buffer[256];
 			unsigned fromAddress;
 			unsigned fromPort;
 			int read = socket.receive(buffer, sizeof(buffer), fromAddress, fromPort);
-			std::ostringstream ss;
-			ss << buffer;
 			// break if player is there
-			if (ss.str() == "hello\0") {
+			if (buffer[0] == Hello) {
 				break;
 			}
 		}
@@ -442,7 +426,7 @@ namespace {
 #endif // MASTER
 		
 		// resend hello for newly connected player
-		sendPacket(data, sizeof(unsigned char)* 6);
+		sendPacket(&hello, 1);
 		
 		FileReader vs("shader.vert");
 		FileReader fs("shader.frag");

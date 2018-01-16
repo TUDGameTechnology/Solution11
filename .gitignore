@@ -3,3 +3,5 @@
 /Deployment/*.vert
 /Deployment/run
 Thumbs.db
+/Server/build
+/Client/build
